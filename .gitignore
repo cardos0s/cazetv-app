@@ -1,0 +1,23 @@
+# Node / Expo (rede de segurança — o app-mobile tem seu próprio .gitignore)
+**/node_modules/
+**/.expo/
+**/dist/
+**/web-build/
+**/expo-env.d.ts
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Manim / Python
+**/__pycache__/
+**/media/
+*.pyc
+
+# Env
+.env
+.env.*
+
+# macOS / editores
+.DS_Store
+*.tsbuildinfo
