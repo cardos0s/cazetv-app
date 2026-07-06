@@ -9,9 +9,10 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Media } from './Media';
-import { partida } from '../data/copa';
+import { campo } from '../theme';
 
 const LINHA = 'rgba(255,255,255,0.5)';
+const CAMPO_BG = [campo.a, campo.b] as const;
 
 export function FieldMock({ tocando }: { tocando: boolean }) {
   const tx = useSharedValue(0);
@@ -36,7 +37,7 @@ export function FieldMock({ tocando }: { tocando: boolean }) {
   }));
 
   return (
-    <Media bg={partida.bg} preset="video" stripes={10} style={StyleSheet.absoluteFill}>
+    <Media bg={CAMPO_BG} preset="video" stripes={10} style={StyleSheet.absoluteFill}>
       <View style={styles.meio} />
       <View style={styles.circulo} />
       <View style={styles.pontoCentro} />

@@ -1,7 +1,7 @@
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ReactNode } from 'react';
-import { Grad } from '../data/copa';
+import { Grad } from '../domain/models';
 
 type Preset = 'hero' | 'thumb' | 'clip' | 'channel' | 'video' | 'none';
 

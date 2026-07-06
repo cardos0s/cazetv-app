@@ -1,68 +1,20 @@
+import { campo } from '../../theme';
+import {
+  Match,
+  LiveMatch,
+  Game,
+  Clip,
+  GroupRow,
+  BracketCol,
+  Channel,
+  ChatMessage,
+  Stat,
+} from '../../domain/models';
 
-import { campo } from '../theme';
-
-export type Grad = readonly [string, string];
-
-export type LiveMatch = {
-  home: string;
-  away: string;
-  score: string;
-  comp: string;
-  viewers: string;
-  bg: Grad;
-};
-
-export type Game = {
-  time: string;
-  live: boolean;
-  home: string;
-  homeFlag: string;
-  homeScore: string;
-  away: string;
-  awayFlag: string;
-  awayScore: string;
-};
-
-export type Clip = { title: string; views: string; bg: Grad };
-
-export type GroupRow = {
-  pos: number;
-  name: string;
-  flag: string;
-  j: number;
-  sg: string;
-  pts: number;
-  classificado: boolean;
-};
-
-export type Tie = {
-  a: string;
-  aFlag: string;
-  aScore: string;
-  aDim?: boolean;
-  b: string;
-  bFlag: string;
-  bScore: string;
-  bDim?: boolean;
-};
-export type BracketCol = { round: string; ties: Tie[] };
-
-export type Channel = {
-  title: string;
-  host: string;
-  tag: string;
-  viewers: string;
-  avatar: string;
-  avatarBg: string;
-  bg: Grad;
-};
-
-export type ChatMsg = { name: string; text: string; color: string };
-export type Stat = { label: string; home: string; away: string; homePct: number; awayPct: number };
-
-export const partida = {
+export const featuredMatch: Match = {
+  id: 'semi',
   comp: 'COPA 2026 · SEMIFINAL',
-  minutoInicial: 67,
+  minute: 67,
   home: 'BRA',
   homeFull: 'BRASIL',
   homeFlag: '🇧🇷',
@@ -72,7 +24,7 @@ export const partida = {
   awayFlag: '🇦🇷',
   awayScore: 1,
   viewers: '1,4M',
-  bg: [campo.a, campo.b] as Grad,
+  bg: [campo.a, campo.b],
 };
 
 export const liveMatches: LiveMatch[] = [
@@ -127,7 +79,15 @@ export const channels: Channel[] = [
   { title: 'FRANÇA x ESPANHA — Quartas', host: 'CazéTV 2', tag: 'Jogo simultâneo', viewers: '540K', avatar: 'C2', avatarBg: '#1a5fb4', bg: ['#1a5fb4', '#164f96'] },
 ];
 
-export const chatSeed: ChatMsg[] = [
+export const statsBase: Stat[] = [
+  { label: 'Posse de bola', home: '58%', away: '42%', homePct: 58, awayPct: 42 },
+  { label: 'Finalizações', home: '12', away: '7', homePct: 63, awayPct: 37 },
+  { label: 'No alvo', home: '5', away: '3', homePct: 62, awayPct: 38 },
+  { label: 'Escanteios', home: '6', away: '4', homePct: 60, awayPct: 40 },
+  { label: 'Faltas', home: '9', away: '13', homePct: 41, awayPct: 59 },
+];
+
+export const chatSeed: ChatMessage[] = [
   { name: 'ZéDaResenha', text: 'QUE JOGO É ESSE MANO 🔥', color: '#1de782' },
   { name: 'MariGol', text: 'Vini tá voando na esquerda!', color: '#ffc531' },
   { name: 'Torcedor_23', text: 'referee ladrão 😡', color: '#ff8a5b' },
@@ -135,7 +95,7 @@ export const chatSeed: ChatMsg[] = [
   { name: 'Junin', text: 'BORA BRASIL CARALHÔ 🇧🇷🇧🇷', color: '#1de782' },
 ];
 
-export const chatPool: ChatMsg[] = [
+export const chatPool: ChatMessage[] = [
   { name: 'Fernanda', text: 'GOLAÇO seria esse agora hein', color: '#ff6bd0' },
   { name: 'PedroH', text: 'defesa argentina tá sofrendo', color: '#5bd0ff' },
   { name: 'ResenhaFC', text: 'coloca o replay Casimiro 😂', color: '#ffc531' },
@@ -146,12 +106,3 @@ export const chatPool: ChatMsg[] = [
   { name: 'AnaClara', text: 'chat tá voando kkk', color: '#5bd0ff' },
 ];
 
-export const reactionBtns = ['🔥', '⚽', '🇧🇷', '😱', '👏', '😂', '❤️'];
-
-export const stats: Stat[] = [
-  { label: 'Posse de bola', home: '58%', away: '42%', homePct: 58, awayPct: 42 },
-  { label: 'Finalizações', home: '12', away: '7', homePct: 63, awayPct: 37 },
-  { label: 'No alvo', home: '5', away: '3', homePct: 62, awayPct: 38 },
-  { label: 'Escanteios', home: '6', away: '4', homePct: 60, awayPct: 40 },
-  { label: 'Faltas', home: '9', away: '13', homePct: 41, awayPct: 59 },
-];

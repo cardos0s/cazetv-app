@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, type } from '../theme';
-import { Clip } from '../data/copa';
+import { Clip } from '../domain/models';
 import { Media } from './Media';
 import { PressableScale } from './PressableScale';
 

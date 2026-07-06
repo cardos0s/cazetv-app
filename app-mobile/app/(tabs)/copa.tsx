@@ -6,12 +6,16 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { colors, spacing, radius, type } from '../../src/theme';
 import { AppHeader } from '../../src/components/AppHeader';
 import { GameRow } from '../../src/components/GameRow';
-import { todayGames, groupA, bracket } from '../../src/data/copa';
+import { Skeleton } from '../../src/components/Skeleton';
+import { useTodayGames, useGroupA, useBracket } from '../../src/hooks/queries';
 
 type Tab = 'hoje' | 'grupos' | 'mata';
 
 export default function Copa() {
   const [tab, setTab] = useState<Tab>('hoje');
+  const today = useTodayGames();
+  const group = useGroupA();
+  const bracket = useBracket();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -45,74 +49,88 @@ export default function Copa() {
 
         {tab === 'hoje' && (
           <Animated.View entering={FadeIn} style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}>
-            {todayGames.map((g, i) => (
-              <Animated.View key={g.home + g.away} entering={FadeInDown.delay(i * 70).springify().damping(16)}>
-                <GameRow game={g} />
-              </Animated.View>
-            ))}
+            {today.isLoading || !today.data
+              ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={72} rounded={radius.card} style={{ marginBottom: 10 }} />)
+              : today.data.map((g, i) => (
+                  <Animated.View key={g.home + g.away} entering={FadeInDown.delay(i * 70).springify().damping(16)}>
+                    <GameRow game={g} />
+                  </Animated.View>
+                ))}
           </Animated.View>
         )}
 
         {tab === 'grupos' && (
           <Animated.View entering={FadeIn} style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
             <Text style={styles.grupoTitulo}>GRUPO A</Text>
-            <View style={styles.tabela}>
-              <View style={styles.thead}>
-                <Text style={[styles.th, styles.cPos]}>#</Text>
-                <Text style={[styles.th, styles.cTime]}>TIME</Text>
-                <Text style={[styles.th, styles.cNum]}>J</Text>
-                <Text style={[styles.th, styles.cNum]}>SG</Text>
-                <Text style={[styles.th, styles.cPts]}>PTS</Text>
-              </View>
-              {groupA.map((t) => (
-                <View key={t.name} style={styles.tr}>
-                  <Text style={[styles.cPos, styles.pos, { color: t.classificado ? colors.verde : colors.muted }]}>
-                    {t.pos}
-                  </Text>
-                  <View style={[styles.cTime, styles.timeCell]}>
-                    <Text style={styles.flag}>{t.flag}</Text>
-                    <Text style={styles.timeNome}>{t.name}</Text>
+            {group.isLoading || !group.data ? (
+              <Skeleton height={210} rounded={radius.card2} />
+            ) : (
+              <>
+                <View style={styles.tabela}>
+                  <View style={styles.thead}>
+                    <Text style={[styles.th, styles.cPos]}>#</Text>
+                    <Text style={[styles.th, styles.cTime]}>TIME</Text>
+                    <Text style={[styles.th, styles.cNum]}>J</Text>
+                    <Text style={[styles.th, styles.cNum]}>SG</Text>
+                    <Text style={[styles.th, styles.cPts]}>PTS</Text>
                   </View>
-                  <Text style={[styles.cNum, styles.num]}>{t.j}</Text>
-                  <Text style={[styles.cNum, styles.num]}>{t.sg}</Text>
-                  <Text style={[styles.cPts, styles.pts]}>{t.pts}</Text>
+                  {group.data.map((t) => (
+                    <View key={t.name} style={styles.tr}>
+                      <Text style={[styles.cPos, styles.pos, { color: t.classificado ? colors.verde : colors.muted }]}>
+                        {t.pos}
+                      </Text>
+                      <View style={[styles.cTime, styles.timeCell]}>
+                        <Text style={styles.flag}>{t.flag}</Text>
+                        <Text style={styles.timeNome}>{t.name}</Text>
+                      </View>
+                      <Text style={[styles.cNum, styles.num]}>{t.j}</Text>
+                      <Text style={[styles.cNum, styles.num]}>{t.sg}</Text>
+                      <Text style={[styles.cPts, styles.pts]}>{t.pts}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-            <View style={styles.legenda}>
-              <View style={styles.legQuad} />
-              <Text style={styles.legTxt}>Classificado</Text>
-            </View>
+                <View style={styles.legenda}>
+                  <View style={styles.legQuad} />
+                  <Text style={styles.legTxt}>Classificado</Text>
+                </View>
+              </>
+            )}
           </Animated.View>
         )}
 
         {tab === 'mata' && (
           <Animated.View entering={FadeIn}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bracket}>
-              {bracket.map((col) => (
-                <View key={col.round} style={styles.col}>
-                  <Text style={styles.round}>{col.round}</Text>
-                  {col.ties.map((tie, i) => (
-                    <View key={i} style={styles.tie}>
-                      <View style={styles.tieLinha}>
-                        <View style={styles.tieTeam}>
-                          <Text style={styles.tieFlag}>{tie.aFlag}</Text>
-                          <Text style={[styles.tieNome, { color: tie.aDim ? colors.dim : colors.text }]}>{tie.a}</Text>
+            {bracket.isLoading || !bracket.data ? (
+              <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
+                <Skeleton height={120} rounded={radius.card} />
+              </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bracket}>
+                {bracket.data.map((col) => (
+                  <View key={col.round} style={styles.col}>
+                    <Text style={styles.round}>{col.round}</Text>
+                    {col.ties.map((tie, i) => (
+                      <View key={i} style={styles.tie}>
+                        <View style={styles.tieLinha}>
+                          <View style={styles.tieTeam}>
+                            <Text style={styles.tieFlag}>{tie.aFlag}</Text>
+                            <Text style={[styles.tieNome, { color: tie.aDim ? colors.dim : colors.text }]}>{tie.a}</Text>
+                          </View>
+                          <Text style={styles.tieScore}>{tie.aScore}</Text>
                         </View>
-                        <Text style={styles.tieScore}>{tie.aScore}</Text>
-                      </View>
-                      <View style={[styles.tieLinha, { marginTop: 7 }]}>
-                        <View style={styles.tieTeam}>
-                          <Text style={styles.tieFlag}>{tie.bFlag}</Text>
-                          <Text style={[styles.tieNome, { color: tie.bDim ? colors.dim : colors.text }]}>{tie.b}</Text>
+                        <View style={[styles.tieLinha, { marginTop: 7 }]}>
+                          <View style={styles.tieTeam}>
+                            <Text style={styles.tieFlag}>{tie.bFlag}</Text>
+                            <Text style={[styles.tieNome, { color: tie.bDim ? colors.dim : colors.text }]}>{tie.b}</Text>
+                          </View>
+                          <Text style={styles.tieScore}>{tie.bScore}</Text>
                         </View>
-                        <Text style={styles.tieScore}>{tie.bScore}</Text>
                       </View>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </ScrollView>
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
           </Animated.View>
         )}
       </ScrollView>

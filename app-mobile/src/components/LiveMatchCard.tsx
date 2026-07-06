@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius, type } from '../theme';
-import { LiveMatch } from '../data/copa';
+import { LiveMatch } from '../domain/models';
 import { Media } from './Media';
 import { PressableScale } from './PressableScale';
 

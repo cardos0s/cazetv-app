@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -15,11 +15,11 @@ import { colors, spacing, radius, type } from '../../src/theme';
 import { LiveDot } from '../../src/components/LiveDot';
 import { PressableScale } from '../../src/components/PressableScale';
 import { FieldMock } from '../../src/components/FieldMock';
-import { partida, chatSeed, chatPool, reactionBtns, stats, ChatMsg } from '../../src/data/copa';
+import { Skeleton } from '../../src/components/Skeleton';
+import { useMatch, useStats } from '../../src/hooks/queries';
+import { useLiveStore, reactionEmojis } from '../../src/store/liveStore';
 
-type Reaction = { id: number; emoji: string; left: string };
-
-function FloatingReaction({ emoji, left, onDone }: { emoji: string; left: string; onDone: () => void }) {
+function FloatingReaction({ emoji, left }: { emoji: string; left: string }) {
   const y = useSharedValue(0);
   const op = useSharedValue(0);
   const sc = useSharedValue(0.5);
@@ -28,8 +28,6 @@ function FloatingReaction({ emoji, left, onDone }: { emoji: string; left: string
     y.value = withTiming(-160, { duration: 1600, easing: Easing.out(Easing.quad) });
     op.value = withSequence(withTiming(1, { duration: 240 }), withTiming(0, { duration: 1360 }));
     sc.value = withSequence(withTiming(1.15, { duration: 240 }), withTiming(1, { duration: 1360 }));
-    const t = setTimeout(onDone, 1600);
-    return () => clearTimeout(t);
   }, []);
 
   const st = useAnimatedStyle(() => ({
@@ -43,36 +41,30 @@ function FloatingReaction({ emoji, left, onDone }: { emoji: string; left: string
 export default function Player() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const matchId = id ?? 'semi';
 
-  const [minute, setMinute] = useState(partida.minutoInicial);
+  const match = useMatch(matchId);
+  const stats = useStats(matchId);
+
+  const minute = useLiveStore((s) => s.minute);
+  const chat = useLiveStore((s) => s.chat);
+  const reactions = useLiveStore((s) => s.reactions);
+  const addReaction = useLiveStore((s) => s.addReaction);
+  const connect = useLiveStore((s) => s.connect);
+  const disconnect = useLiveStore((s) => s.disconnect);
+
   const [tab, setTab] = useState<'chat' | 'stats'>('chat');
   const [tocando, setTocando] = useState(true);
-  const [chat, setChat] = useState<ChatMsg[]>(chatSeed);
-  const [reactions, setReactions] = useState<Reaction[]>([]);
-  const nextId = useRef(0);
   const chatRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    const t = setInterval(() => setMinute((m) => Math.min(90, m + 1)), 5000);
-    return () => clearInterval(t);
+    connect();
+    return () => disconnect();
   }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      const m = chatPool[Math.floor(Math.random() * chatPool.length)];
-      setChat((c) => [...c.slice(-40), m]);
-    }, 2800);
-    return () => clearInterval(t);
-  }, []);
-
-  const fireReaction = (emoji: string) => {
-    const id = nextId.current++;
-    const left = `${(15 + Math.random() * 60).toFixed(0)}%`;
-    setReactions((r) => [...r, { id, emoji, left }]);
-    setTimeout(() => setReactions((r) => r.filter((x) => x.id !== id)), 1600);
-  };
 
   const topPad = Math.max(insets.top, 12);
+  const m = match.data;
 
   return (
     <View style={styles.fill}>
@@ -104,45 +96,42 @@ export default function Player() {
         </View>
 
         {reactions.map((r) => (
-          <FloatingReaction
-            key={r.id}
-            emoji={r.emoji}
-            left={r.left}
-            onDone={() => setReactions((cur) => cur.filter((x) => x.id !== r.id))}
-          />
+          <FloatingReaction key={r.id} emoji={r.emoji} left={r.left} />
         ))}
       </View>
 
       <View style={styles.scorebar}>
-        <View style={styles.scoreTeam}>
-          <Text style={styles.scoreFlag}>{partida.homeFlag}</Text>
-          <Text style={styles.scoreNome}>{partida.homeFull}</Text>
-        </View>
-        <View style={styles.scoreCentro}>
-          <Text style={styles.scoreNum}>
-            {partida.homeScore}
-            <Text style={{ color: colors.dim }}>·</Text>
-            {partida.awayScore}
-          </Text>
-          <Text style={styles.scoreTempo}>{minute}' 2º TEMPO</Text>
-        </View>
-        <View style={styles.scoreTeam}>
-          <Text style={styles.scoreFlag}>{partida.awayFlag}</Text>
-          <Text style={styles.scoreNome}>{partida.awayFull}</Text>
-        </View>
+        {!m ? (
+          <Skeleton height={44} rounded={radius.pill} />
+        ) : (
+          <>
+            <View style={styles.scoreTeam}>
+              <Text style={styles.scoreFlag}>{m.homeFlag}</Text>
+              <Text style={styles.scoreNome}>{m.homeFull}</Text>
+            </View>
+            <View style={styles.scoreCentro}>
+              <Text style={styles.scoreNum}>
+                {m.homeScore}
+                <Text style={{ color: colors.dim }}>·</Text>
+                {m.awayScore}
+              </Text>
+              <Text style={styles.scoreTempo}>{minute}' 2º TEMPO</Text>
+            </View>
+            <View style={styles.scoreTeam}>
+              <Text style={styles.scoreFlag}>{m.awayFlag}</Text>
+              <Text style={styles.scoreNome}>{m.awayFull}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <View style={styles.tabs}>
         <Pressable onPress={() => setTab('chat')} style={styles.tab}>
-          <Text style={[styles.tabTxt, { color: tab === 'chat' ? colors.text : colors.muted }]}>
-            💬 Chat da torcida
-          </Text>
+          <Text style={[styles.tabTxt, { color: tab === 'chat' ? colors.text : colors.muted }]}>💬 Chat da torcida</Text>
           <View style={[styles.tabBorder, { backgroundColor: tab === 'chat' ? colors.verde : 'transparent' }]} />
         </Pressable>
         <Pressable onPress={() => setTab('stats')} style={styles.tab}>
-          <Text style={[styles.tabTxt, { color: tab === 'stats' ? colors.text : colors.muted }]}>
-            📊 Estatísticas
-          </Text>
+          <Text style={[styles.tabTxt, { color: tab === 'stats' ? colors.text : colors.muted }]}>📊 Estatísticas</Text>
           <View style={[styles.tabBorder, { backgroundColor: tab === 'stats' ? colors.verde : 'transparent' }]} />
         </Pressable>
       </View>
@@ -175,8 +164,8 @@ export default function Player() {
             style={styles.reacBar}
             contentContainerStyle={{ gap: 8, paddingHorizontal: 14, alignItems: 'center' }}
           >
-            {reactionBtns.map((e) => (
-              <PressableScale key={e} scaleTo={0.82} style={styles.reacBtn} onPress={() => fireReaction(e)}>
+            {reactionEmojis.map((e) => (
+              <PressableScale key={e} scaleTo={0.82} style={styles.reacBtn} onPress={() => addReaction(e)}>
                 <Text style={{ fontSize: 20 }}>{e}</Text>
               </PressableScale>
             ))}
@@ -193,19 +182,21 @@ export default function Player() {
         </View>
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.statsWrap} showsVerticalScrollIndicator={false}>
-          {stats.map((s) => (
-            <View key={s.label} style={styles.statRow}>
-              <View style={styles.statHead}>
-                <Text style={styles.statVal}>{s.home}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-                <Text style={styles.statVal}>{s.away}</Text>
-              </View>
-              <View style={styles.statBar}>
-                <View style={[styles.statFillHome, { flex: s.homePct }]} />
-                <View style={[styles.statFillAway, { flex: s.awayPct }]} />
-              </View>
-            </View>
-          ))}
+          {stats.isLoading || !stats.data
+            ? [0, 1, 2, 3].map((i) => <Skeleton key={i} height={30} style={{ marginBottom: 18 }} />)
+            : stats.data.map((s) => (
+                <View key={s.label} style={styles.statRow}>
+                  <View style={styles.statHead}>
+                    <Text style={styles.statVal}>{s.home}</Text>
+                    <Text style={styles.statLabel}>{s.label}</Text>
+                    <Text style={styles.statVal}>{s.away}</Text>
+                  </View>
+                  <View style={styles.statBar}>
+                    <View style={[styles.statFillHome, { flex: s.homePct }]} />
+                    <View style={[styles.statFillAway, { flex: s.awayPct }]} />
+                  </View>
+                </View>
+              ))}
         </ScrollView>
       )}
     </View>

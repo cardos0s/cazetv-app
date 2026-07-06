@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius, type } from '../theme';
-import { Game } from '../data/copa';
+import { Game } from '../domain/models';
 import { PressableScale } from './PressableScale';
 
 export function GameRow({ game }: { game: Game }) {
