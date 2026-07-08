@@ -1,0 +1,147 @@
+// Schema do banco da CazéTV — Postgres + Prisma
+// Modelado a partir de app-mobile/src/domain/models.ts, agora NORMALIZADO:
+// cada dado vive num lugar só; o resto referencia por id (foreign key).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+}
+
+enum Stage {
+  GROUP
+  QUARTERS
+  SEMIFINAL
+  FINAL
+}
+
+// Um time existe UMA vez. Antes: "Brasil 🇧🇷" repetido em jogo, agenda, grupo, chave.
+model Team {
+  id          String          @id @default(cuid())
+  name        String // "Brasil"
+  short       String          @unique // "BRA"
+  flag        String // "🇧🇷"
+  colorHome   String
+  colorAway   String
+  homeMatches Match[]         @relation("HomeTeam")
+  awayMatches Match[]         @relation("AwayTeam")
+  standings   GroupStanding[]
+  createdAt   DateTime        @default(now())
+}
+
+model Competition {
+  id        String          @id @default(cuid())
+  name      String // "Copa 2026"
+  season    String // "2026"
+  matches   Match[]
+  standings GroupStanding[]
+}
+
+model Match {
+  id            String        @id @default(cuid())
+  competition   Competition   @relation(fields: [competitionId], references: [id])
+  competitionId String
+  homeTeam      Team          @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  homeTeamId    String
+  awayTeam      Team          @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  awayTeamId    String
+  stage         Stage
+  status        MatchStatus   @default(SCHEDULED)
+  startsAt      DateTime
+  minute        Int?
+  homeScore     Int           @default(0)
+  awayScore     Int           @default(0)
+  viewers       Int           @default(0)
+  stats         MatchStat[]
+  messages      ChatMessage[]
+  clips         Clip[]
+  channels      Channel[]
+  createdAt     DateTime      @default(now())
+
+  @@index([status])
+  @@index([startsAt])
+}
+
+// Placar comparativo (posse, finalizações...) — 1 jogo tem N estatísticas.
+model MatchStat {
+  id        String @id @default(cuid())
+  match     Match  @relation(fields: [matchId], references: [id])
+  matchId   String
+  label     String // "Posse de bola"
+  homeValue String // "58%"
+  awayValue String // "42%"
+  homePct   Int
+  awayPct   Int
+  order     Int    @default(0)
+
+  @@index([matchId])
+}
+
+// Autor de mensagem no chat — o avatar "C" vira um usuário de verdade.
+model User {
+  id        String        @id @default(cuid())
+  name      String        @unique // "ZéDaResenha"
+  color     String
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  match     Match    @relation(fields: [matchId], references: [id])
+  matchId   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([matchId, createdAt])
+}
+
+model Channel {
+  id          String  @id @default(cuid())
+  match       Match?  @relation(fields: [matchId], references: [id])
+  matchId     String?
+  title       String
+  host        String
+  tag         String
+  viewers     Int     @default(0)
+  avatar      String
+  avatarColor String
+  order       Int     @default(0)
+}
+
+model Clip {
+  id        String   @id @default(cuid())
+  match     Match?   @relation(fields: [matchId], references: [id])
+  matchId   String?
+  title     String
+  views     String
+  createdAt DateTime @default(now())
+}
+
+// Classificação de grupo — 1 linha por time no grupo. Chave única evita duplicar.
+model GroupStanding {
+  id            String      @id @default(cuid())
+  competition   Competition @relation(fields: [competitionId], references: [id])
+  competitionId String
+  groupName     String // "A"
+  team          Team        @relation(fields: [teamId], references: [id])
+  teamId        String
+  position      Int
+  played        Int         @default(0)
+  goalDiff      Int         @default(0)
+  points        Int         @default(0)
+  qualified     Boolean     @default(false)
+
+  @@unique([competitionId, groupName, teamId])
+  @@index([competitionId, groupName])
+}

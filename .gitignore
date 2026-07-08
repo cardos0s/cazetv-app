@@ -18,6 +18,9 @@ yarn-error.*
 .env
 .env.*
 
+# Roteiros e system design ficam fora do repo de código (conteúdo, não código)
+docs/
+
 # macOS / editores
 .DS_Store
 *.tsbuildinfo
